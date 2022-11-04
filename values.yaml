@@ -1,0 +1,26 @@
+metadata:
+  name: "net-policy-5"
+  namespace: "net"
+spec:
+  podselector:
+    key: "jaba"
+    value: "nika"
+policytypes:
+  in: "Ingress"
+  out: "Egress"
+ingress:
+  podselector:
+    key: "allow"
+    value: "only"
+  namespaceselector: 
+    key: "kubernetes.io/metadata.name"
+    value: "default"
+  ipblock:
+    cidr: "1.1.0.0/16"
+    except: "1.1.1.0/24"
+egress:
+  ipblock:
+    cidr: "1.1.1.1/32"
+  port:
+    protocol: "TCP"
+    portnumber: "5555"

@@ -1,0 +1,213 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.metadata.name }}
+  namespace: {{ .Values.metadata.namespace | default "default" | quote }}
+spec:
+  podSelector:
+    matchLabels:
+      {{ .Values.spec.podselector.key }}: {{ .Values.spec.podselector.value }}
+  policyTypes:
+  {{ if and (.Values.policytypes.in)  (.Values.policytypes.out) }}
+    - {{ .Values.policytypes.in }}
+    - {{ .Values.policytypes.out }}
+  {{ else if .Values.policytypes.in }}
+    - {{ .Values.policytypes.in }}
+  {{ else if .Values.policytypes.out }}
+    - {{ .Values.policytypes.out }}
+  {{ end }}
+  {{ if and (.Values.policytypes.in) (.Values.policytypes.out) }}
+  ingress:
+    - from:
+    {{ if and (.Values.ingress.podselector.key) (.Values.ingress.podselector.value) 
+    (.Values.ingress.namespaceselector.key) (.Values.ingress.namespaceselector.value) 
+    (.Values.ingress.ipblock.cidr) (.Values.ingress.ipblock.except) }}
+        - podSelector:
+            matchLabels:
+              {{ .Values.ingress.podselector.key }}: {{ .Values.ingress.podselector.value }}  
+        - namespaceSelector: 
+            matchLabels:
+              {{ .Values.ingress.namespaceselector.key | default "kubernetes.io/metadata.name" | quote}}: {{ .Values.ingress.namespaceselector.value | default "default" | quote}}     
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}
+            except:
+              - {{ .Values.ingress.ipblock.except }}
+    {{ else if and (.Values.ingress.podselector.key) (.Values.ingress.podselector.value) 
+    (.Values.ingress.namespaceselector.key) (.Values.ingress.namespaceselector.value) 
+    (.Values.ingress.ipblock.cidr) }}
+        - podSelector:
+            matchLabels:
+              {{ .Values.ingress.podselector.key }}: {{ .Values.ingress.podselector.value }}  
+        - namespaceSelector: 
+            matchLabels:
+              {{ .Values.ingress.namespaceselector.key | default "kubernetes.io/metadata.name" | quote}}: {{ .Values.ingress.namespaceselector.value | default "default" | quote}}     
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}
+    {{ else if and (.Values.ingress.podselector.key) (.Values.ingress.podselector.value) 
+    (.Values.ingress.namespaceselector.key) (.Values.ingress.namespaceselector.value) }} 
+        - podSelector:
+            matchLabels:
+              {{ .Values.ingress.podselector.key }}: {{ .Values.ingress.podselector.value }}  
+        - namespaceSelector: 
+            matchLabels:
+              {{ .Values.ingress.namespaceselector.key | default "kubernetes.io/metadata.name" | quote}}: {{ .Values.ingress.namespaceselector.value | default "default" | quote}}
+    {{ else if and (.Values.ingress.podselector.key) (.Values.ingress.podselector.value) 
+    (.Values.ingress.ipblock.cidr) (.Values.ingress.ipblock.except) }}
+        - podSelector:
+            matchLabels:
+              {{ .Values.ingress.podselector.key }}: {{ .Values.ingress.podselector.value }} 
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}
+            except:
+              - {{ .Values.ingress.ipblock.except }}
+    {{ else if and (.Values.ingress.podselector.key) (.Values.ingress.podselector.value) 
+    (.Values.ingress.ipblock.cidr) }}
+        - podSelector:
+            matchLabels:
+              {{ .Values.ingress.podselector.key }}: {{ .Values.ingress.podselector.value }} 
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}                 
+    {{ else if and (.Values.ingress.namespaceselector.key) (.Values.ingress.namespaceselector.value) 
+    (.Values.ingress.ipblock.cidr) (.Values.ingress.ipblock.except)}}
+        - namespaceSelector: 
+            matchLabels:
+              {{ .Values.ingress.namespaceselector.key | default "kubernetes.io/metadata.name" | quote}}: {{ .Values.ingress.namespaceselector.value | default "default" | quote}}     
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}
+            except:
+              - {{ .Values.ingress.ipblock.except }}
+    {{ else if and (.Values.ingress.namespaceselector.key) (.Values.ingress.namespaceselector.value) 
+    (.Values.ingress.ipblock.cidr) }}
+        - namespaceSelector: 
+            matchLabels:
+              {{ .Values.ingress.namespaceselector.key | default "kubernetes.io/metadata.name" | quote}}: {{ .Values.ingress.namespaceselector.value | default "default" | quote}}     
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}
+    {{ else if and (.Values.ingress.podselector.key) (.Values.ingress.podselector.value) }}
+        - podSelector:
+            matchLabels:
+              {{ .Values.ingress.podselector.key }}: {{ .Values.ingress.podselector.value }}
+    {{ else if and (.Values.ingress.namespaceselector.key) (.Values.ingress.namespaceselector.value) }}
+        - namespaceSelector: 
+            matchLabels:
+              {{ .Values.ingress.namespaceselector.key | default "kubernetes.io/metadata.name" | quote}}: {{ .Values.ingress.namespaceselector.value | default "default" | quote}}
+    {{ else if and (.Values.ingress.ipblock.cidr) (.Values.ingress.ipblock.except) }}
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}
+            except:
+              - {{ .Values.ingress.ipblock.except }}
+    {{ else if .Values.ingress.ipblock.cidr }}
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}     
+    {{ end }}           
+  egress:
+    - to:
+    {{ if and (.Values.egress.ipblock.cidr) (.Values.egress.port.protocol) (.Values.egress.port.portnumber) }}
+        - ipBlock:
+            cidr: {{ .Values.egress.ipblock.cidr }}      
+      ports:
+        - protocol: {{ .Values.egress.port.protocol }}
+          port: {{ .Values.egress.port.portnumber }}
+    {{ else if .Values.egress.ipblock.cidr }}
+        - ipBlock:
+            cidr: {{ .Values.egress.ipblock.cidr }}  
+    {{ end }}
+
+  {{ else if .Values.policytypes.in }}
+  ingress:
+    - from:
+    {{ if and (.Values.ingress.podselector.key) (.Values.ingress.podselector.value) 
+    (.Values.ingress.namespaceselector.key) (.Values.ingress.namespaceselector.value) 
+    (.Values.ingress.ipblock.cidr) (.Values.ingress.ipblock.except) }}
+        - podSelector:
+            matchLabels:
+              {{ .Values.ingress.podselector.key }}: {{ .Values.ingress.podselector.value }}  
+        - namespaceSelector: 
+            matchLabels:
+              {{ .Values.ingress.namespaceselector.key | default "kubernetes.io/metadata.name" | quote}}: {{ .Values.ingress.namespaceselector.value | default "default" | quote}}     
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}
+            except:
+              - {{ .Values.ingress.ipblock.except }}
+    {{ else if and (.Values.ingress.podselector.key) (.Values.ingress.podselector.value) 
+    (.Values.ingress.namespaceselector.key) (.Values.ingress.namespaceselector.value) 
+    (.Values.ingress.ipblock.cidr) }}
+        - podSelector:
+            matchLabels:
+              {{ .Values.ingress.podselector.key }}: {{ .Values.ingress.podselector.value }}  
+        - namespaceSelector: 
+            matchLabels:
+              {{ .Values.ingress.namespaceselector.key | default "kubernetes.io/metadata.name" | quote}}: {{ .Values.ingress.namespaceselector.value | default "default" | quote}}     
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}
+    {{ else if and (.Values.ingress.podselector.key) (.Values.ingress.podselector.value) 
+    (.Values.ingress.namespaceselector.key) (.Values.ingress.namespaceselector.value) }} 
+        - podSelector:
+            matchLabels:
+              {{ .Values.ingress.podselector.key }}: {{ .Values.ingress.podselector.value }}  
+        - namespaceSelector: 
+            matchLabels:
+              {{ .Values.ingress.namespaceselector.key | default "kubernetes.io/metadata.name" | quote}}: {{ .Values.ingress.namespaceselector.value | default "default" | quote}}
+    {{ else if and (.Values.ingress.podselector.key) (.Values.ingress.podselector.value) 
+    (.Values.ingress.ipblock.cidr) (.Values.ingress.ipblock.except) }}
+        - podSelector:
+            matchLabels:
+              {{ .Values.ingress.podselector.key }}: {{ .Values.ingress.podselector.value }} 
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}
+            except:
+              - {{ .Values.ingress.ipblock.except }}
+    {{ else if and (.Values.ingress.podselector.key) (.Values.ingress.podselector.value) 
+    (.Values.ingress.ipblock.cidr) }}
+        - podSelector:
+            matchLabels:
+              {{ .Values.ingress.podselector.key }}: {{ .Values.ingress.podselector.value }} 
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}                 
+    {{ else if and (.Values.ingress.namespaceselector.key) (.Values.ingress.namespaceselector.value) 
+    (.Values.ingress.ipblock.cidr) (.Values.ingress.ipblock.except)}}
+        - namespaceSelector: 
+            matchLabels:
+              {{ .Values.ingress.namespaceselector.key | default "kubernetes.io/metadata.name" | quote}}: {{ .Values.ingress.namespaceselector.value | default "default" | quote}}     
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}
+            except:
+              - {{ .Values.ingress.ipblock.except }}
+    {{ else if and (.Values.ingress.namespaceselector.key) (.Values.ingress.namespaceselector.value) 
+    (.Values.ingress.ipblock.cidr) }}
+        - namespaceSelector: 
+            matchLabels:
+              {{ .Values.ingress.namespaceselector.key | default "kubernetes.io/metadata.name" | quote}}: {{ .Values.ingress.namespaceselector.value | default "default" | quote}}     
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}
+    {{ else if and (.Values.ingress.podselector.key) (.Values.ingress.podselector.value) }}
+        - podSelector:
+            matchLabels:
+              {{ .Values.ingress.podselector.key }}: {{ .Values.ingress.podselector.value }}
+    {{ else if and (.Values.ingress.namespaceselector.key) (.Values.ingress.namespaceselector.value) }}
+        - namespaceSelector: 
+            matchLabels:
+              {{ .Values.ingress.namespaceselector.key | default "kubernetes.io/metadata.name" | quote}}: {{ .Values.ingress.namespaceselector.value | default "default" | quote}}
+    {{ else if and (.Values.ingress.ipblock.cidr) (.Values.ingress.ipblock.except) }}
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}
+            except:
+              - {{ .Values.ingress.ipblock.except }}
+    {{ else if .Values.ingress.ipblock.cidr }}
+        - ipBlock:
+            cidr: {{ .Values.ingress.ipblock.cidr }}     
+    {{ end }}     
+  {{ else if .Values.policytypes.out }}
+  egress:
+  - to:
+    {{ if and (.Values.egress.ipblock.cidr) (.Values.egress.port.protocol) (.Values.egress.port.portnumber) }}
+      - ipBlock:
+          cidr: {{ .Values.egress.ipblock.cidr }}      
+    ports:
+      - protocol: {{ .Values.egress.port.protocol }}
+        port: {{ .Values.egress.port.portnumber }}
+    {{ else if .Values.egress.ipblock.cidr }}
+        - ipBlock:
+            cidr: {{ .Values.egress.ipblock.cidr }}  
+    {{ end }}
+  {{ end }}
